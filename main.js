@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 
 const WIDTH = (canvas.width = canvas.offsetWidth);
 const HEIGHT = (canvas.height = canvas.offsetHeight);
-const GRAIN_SIZE = 10;
+const GRAIN_SIZE = 8;
 
 ctx.fillStyle = "#2F3337";
 
@@ -25,7 +25,7 @@ class Sandbox {
   init() {
     window.requestAnimationFrame(this.render);
 
-    setInterval(this.update, 1000 / 165);
+    setInterval(this.update, 1000 / 60);
     
     let drawing = false;
 
@@ -69,7 +69,7 @@ class Sandbox {
     for (const grain of this.sand) {
       grain.update(this.sand);
     }
-    color += 0.5;
+    color += 0.1;
     if (color > 360) {
       color = 0;
     }
