@@ -3,7 +3,7 @@ const ctx = canvas.getContext("2d");
 
 const WIDTH = (canvas.width = canvas.offsetWidth);
 const HEIGHT = (canvas.height = canvas.offsetHeight);
-const GRAIN_SIZE = 8;
+const GRAIN_SIZE = 10;
 
 ctx.fillStyle = "#2F3337";
 
@@ -26,11 +26,14 @@ class Sandbox {
     window.requestAnimationFrame(this.render);
 
     setInterval(this.update, 1000 / 60);
-    
+
     let drawing = false;
 
     canvas.addEventListener("mousedown", (e) => {
-      this.drawBlockOfSand(e.clientX - e.target.offsetLeft, e.clientY - e.target.offsetTop);
+      this.drawBlockOfSand(
+        e.clientX - e.target.offsetLeft,
+        e.clientY - e.target.offsetTop
+      );
       drawing = true;
     });
 
@@ -40,17 +43,24 @@ class Sandbox {
 
     canvas.addEventListener("mousemove", (e) => {
       if (drawing) {
-        this.drawBlockOfSand(e.clientX - e.target.offsetLeft, e.clientY - e.target.offsetTop);
+        this.drawBlockOfSand(
+          e.clientX - e.target.offsetLeft,
+          e.clientY - e.target.offsetTop
+        );
       }
     });
-
   }
 
   drawBlockOfSand(x, y, size = 2) {
     const { x: x1, y: y1 } = this.normalizePoint(x, y);
     for (let i = -size / 2; i < size / 2; i++) {
       for (let j = -size / 2; j < size / 2; j++) {
-        this.sand.push(new Sand(x1 + i * GRAIN_SIZE, y1 + j * GRAIN_SIZE, this));
+        if (this.sand.some((grain) => grain.x == x1 + i * GRAIN_SIZE && grain.y == y1 + j * GRAIN_SIZE)) {
+          continue;
+        }
+        this.sand.push(
+          new Sand(x1 + i * GRAIN_SIZE, y1 + j * GRAIN_SIZE, this)
+        );
       }
     }
   }
@@ -100,6 +110,7 @@ class Sand {
     this.height = GRAIN_SIZE;
     this.speed = GRAIN_SIZE * 1;
     this.color = color;
+    this.stopped = false;
   }
 
   /**
@@ -179,14 +190,23 @@ class Sand {
    */
   update(sand) {
     if (this.y >= HEIGHT - this.height) {
+      this.stopped = true;
       return (this.y = HEIGHT - this.height);
     }
     if (this.hasGrainBelow(sand)) {
+      let shouldStop = false;
       const goLeftFirst = Math.random() > 0.5;
       if (goLeftFirst) {
-        return this.goDownLeft(sand) ?? this.goDownRight(sand);
+        shouldStop = !(this.goDownLeft(sand) || this.goDownRight(sand));
+      } else {
+        shouldStop = !(this.goDownRight(sand) || this.goDownLeft(sand));
       }
-      return this.goDownRight(sand) ?? this.goDownLeft(sand);
+
+      if (shouldStop) {
+        this.stopped = true;
+      }
+
+      return
     }
     this.y += this.speed;
   }
