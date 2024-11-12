@@ -69,7 +69,7 @@ class Sandbox {
     for (const grain of this.sand) {
       grain.update(this.sand);
     }
-    color += 0.1;
+    color += 0.2;
     if (color > 360) {
       color = 0;
     }
@@ -152,7 +152,8 @@ class Sand {
     if (this.y >= HEIGHT - this.height) {
       return (this.y = HEIGHT - this.height);
     }
-    if (this.hasGrainBelowLeft(sand)) {
+
+    if (this.hasGrainBelowLeft(sand) || this.x <= 0) {
       return false;
     }
     this.x -= this.width;
@@ -166,7 +167,7 @@ class Sand {
     if (this.y >= HEIGHT - this.height) {
       return (this.y = HEIGHT - this.height);
     }
-    if (this.hasGrainBelowRight(sand)) {
+    if (this.hasGrainBelowRight(sand) || this.x >= WIDTH - this.width) {
       return false;
     }
     this.x += this.width;
@@ -179,12 +180,6 @@ class Sand {
   update(sand) {
     if (this.y >= HEIGHT - this.height) {
       return (this.y = HEIGHT - this.height);
-    }
-    if (this.x >= WIDTH - this.width) {
-      return (this.x = WIDTH - this.width);
-    }
-    if (this.x <= 0) {
-      return (this.x = 0);
     }
     if (this.hasGrainBelow(sand)) {
       const goLeftFirst = Math.random() > 0.5;
