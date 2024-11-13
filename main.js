@@ -1,4 +1,4 @@
-const NUM_PARTICLES = 2 ** 14;
+const NUM_PARTICLES = 2 ** 13.5;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -11,7 +11,7 @@ const GRAIN_SIZE = Math.floor(Math.sqrt((WIDTH * HEIGHT) / NUM_PARTICLES));
 const GRID_HEIGHT = Math.floor(HEIGHT / GRAIN_SIZE);
 const GRID_WIDTH = Math.floor(WIDTH / GRAIN_SIZE);
 
-function createGridArray(height, width) {
+function createReverseGridArray(height, width) {
   let array = [];
   for (let y = height; y >= 0; y--) {
     for (let x = width; x >= 0; x--) {
@@ -29,6 +29,8 @@ class SandBox {
     this.color = 180;
     this.erasing = false;
     this.eraseButton = document.getElementById("erase");
+    this.resetButton = document.getElementById("reset");
+    this.gridArray = createReverseGridArray(GRID_HEIGHT, GRID_WIDTH);
     this.update = this.update.bind(this);
     this.render = this.render.bind(this);
     this.init();
@@ -121,13 +123,11 @@ class SandBox {
 
   init() {
     window.requestAnimationFrame(this.render);
-    setInterval(this.update, 1000 / 60);
+    setInterval(this.update, 1000 / 120);
 
     let drawing = false;
 
-    const resetButton = document.getElementById("reset");
-
-    resetButton.addEventListener("click", () => {
+    this.resetButton.addEventListener("click", () => {
       this.reset();
     });
 
@@ -178,10 +178,8 @@ class SandBox {
       .getElementById("sand")
       .setAttribute("style", `--sand-color: hsl(${this.color} 70% 50%)`);
 
-    const gridArray = createGridArray(GRID_HEIGHT, GRID_WIDTH);
-
-    for (let i = 0; i < gridArray.length; i++) {
-      const [x, y] = gridArray[i];
+    for (let i = 0; i < this.gridArray.length; i++) {
+      const [x, y] = this.gridArray[i];
 
       if (!this.hasSand(x, y)) {
         continue;
