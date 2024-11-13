@@ -37,11 +37,38 @@
       #sand {
         color: var(--sand-color, hsl(0 70% 50%));
       }
+      #reset,
+      #erase {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-family: monospace;
+        font-weight: bold;
+        cursor: pointer;
+        background-color: hsl(0 0% 100% / 0.7);
+      }
+      #reset:hover,
+      #erase:hover {
+        background-color: hsl(0 0% 100% / 0.8);
+      }
+      #erase.active {
+        background-color: hsl(0 0% 100% / 1);
+      }
+      #info {
+        min-height: 30px;
+      }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <h1>click & drag to throw <span id="sand">sand</span></h1>
+    <h1>
+      click & drag to <span id="action">throw</span> <span id="sand">sand</span>
+    </h1>
+    <sub id="info"></sub>
+    <div class="actions">
+      <button id="reset">Clear</button>
+      <button id="erase">Erase</button>
+    </div>
     <script src="main.js" type="module"></script>
   </body>
 </html>

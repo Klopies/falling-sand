@@ -13,7 +13,7 @@ const GRID_WIDTH = Math.floor(WIDTH / GRAIN_SIZE);
 
 function createGridArray(height, width) {
   let array = [];
-  for (let y = height; y >=0; y--) {
+  for (let y = height; y >= 0; y--) {
     for (let x = width; x >= 0; x--) {
       array.push([x, y]);
     }
@@ -26,7 +26,9 @@ const mapKey = (x, y) => `${x},${y}`;
 class SandBox {
   constructor() {
     this.sand = new Map();
-    this.color = 0;
+    this.color = 180;
+    this.erasing = false;
+    this.eraseButton = document.getElementById("erase");
     this.update = this.update.bind(this);
     this.render = this.render.bind(this);
     this.init();
@@ -95,6 +97,27 @@ class SandBox {
     }
   }
 
+  eraseBlockOfSand(x, y) {
+    for (let i = -2; i < 2; i++) {
+      for (let j = -2; j < 2; j++) {
+        if (this.hasSand(x + i, y + j)) {
+          this.emptyCell(x + i, y + j);
+        }
+      }
+    }
+  }
+
+  onEraseStateChange(active) {
+    this.erasing = active;
+    active
+      ? this.eraseButton.classList.add("active")
+      : this.eraseButton.classList.remove("active");
+
+    document.getElementById("action").innerHTML = active ? "erase" : "draw";
+    document.getElementById("info").innerHTML = active
+      ? "(press ESC to cancel)"
+      : "";
+  }
 
   init() {
     window.requestAnimationFrame(this.render);
@@ -102,12 +125,31 @@ class SandBox {
 
     let drawing = false;
 
+    const resetButton = document.getElementById("reset");
+
+    resetButton.addEventListener("click", () => {
+      this.reset();
+    });
+
+    this.eraseButton.addEventListener("click", () => {
+      this.onEraseStateChange(!this.erasing);
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.onEraseStateChange(false);
+      }
+    });
+
     canvas.addEventListener("mousedown", (e) => {
-      this.drawBlockOfSand(
-        Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
-        Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE)
-      );
       drawing = true;
+      const [x, y] = [
+        Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
+        Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE),
+      ];
+      if (drawing) {
+        this.erasing ? this.eraseBlockOfSand(x, y) : this.drawBlockOfSand(x, y);
+      }
     });
 
     window.addEventListener("mouseup", (e) => {
@@ -115,13 +157,18 @@ class SandBox {
     });
 
     canvas.addEventListener("mousemove", (e) => {
+      const [x, y] = [
+        Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
+        Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE),
+      ];
       if (drawing) {
-        this.drawBlockOfSand(
-          Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
-          Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE)
-        );
+        this.erasing ? this.eraseBlockOfSand(x, y) : this.drawBlockOfSand(x, y);
       }
     });
+  }
+
+  reset() {
+    this.sand = new Map();
   }
 
   update() {
