@@ -1,4 +1,4 @@
-const NUM_PARTICLES = 2**14;
+const NUM_PARTICLES = 2 ** 14;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -10,6 +10,16 @@ const GRAIN_SIZE = Math.floor(Math.sqrt((WIDTH * HEIGHT) / NUM_PARTICLES));
 
 const GRID_HEIGHT = Math.floor(HEIGHT / GRAIN_SIZE);
 const GRID_WIDTH = Math.floor(WIDTH / GRAIN_SIZE);
+
+function createGridArray(height, width) {
+  let array = [];
+  for (let y = height; y >=0; y--) {
+    for (let x = width; x >= 0; x--) {
+      array.push([x, y]);
+    }
+  }
+  return array;
+}
 
 const mapKey = (x, y) => `${x},${y}`;
 
@@ -32,6 +42,13 @@ class SandBox {
 
   getSand(x, y) {
     return this.sand.get(mapKey(x, y));
+  }
+
+  enumerateSand() {
+    return Array.from(this.sand.entries()).map(([xy, grain]) => [
+      xy.split(",").map(Number),
+      grain,
+    ]);
   }
 
   hasSand(x, y) {
@@ -78,16 +95,8 @@ class SandBox {
     }
   }
 
-  createEmptySpace() {
-    for (let x = 0; x < GRID_WIDTH; x++) {
-      for (let y = 0; y < GRID_HEIGHT; y++) {
-        this.emptyCell(x, y);
-      }
-    }
-  }
 
   init() {
-    this.createEmptySpace();
     window.requestAnimationFrame(this.render);
     setInterval(this.update, 1000 / 60);
 
@@ -116,30 +125,33 @@ class SandBox {
   }
 
   update() {
-    this.color += 0.2;
-    if (this.color > 360) {
-      this.color = 0;
-    }
+    this.color = (this.color + 0.1) % 360;
 
-    for (let y = GRID_HEIGHT; y >= 0; y--) {
-      for (let x = GRID_WIDTH; x >= 0; x--) {
-        if (!this.hasSand(x, y)) {
-          continue;
-        }
-        if (y == GRID_HEIGHT) {
-          continue;
-        }
-        if (this.hasSand(x, y + 1)) {
-          const goLeftFirst = Math.random() > 0.5;
-          if (goLeftFirst) {
-            this.moveDownAndLeft(x, y) ?? this.moveDownAndRight(x, y);
-            continue;
-          }
-          this.moveDownAndRight(x, y) ?? this.moveDownAndLeft(x, y);
-          continue;
-        }
-        this.moveDown(x, y);
+    document
+      .getElementById("sand")
+      .setAttribute("style", `--sand-color: hsl(${this.color} 70% 50%)`);
+
+    const gridArray = createGridArray(GRID_HEIGHT, GRID_WIDTH);
+
+    for (let i = 0; i < gridArray.length; i++) {
+      const [x, y] = gridArray[i];
+
+      if (!this.hasSand(x, y)) {
+        continue;
       }
+      if (y == GRID_HEIGHT) {
+        continue;
+      }
+      if (this.hasSand(x, y + 1)) {
+        const goLeftFirst = Math.random() > 0.5;
+        if (goLeftFirst) {
+          this.moveDownAndLeft(x, y) ?? this.moveDownAndRight(x, y);
+          continue;
+        }
+        this.moveDownAndRight(x, y) ?? this.moveDownAndLeft(x, y);
+        continue;
+      }
+      this.moveDown(x, y);
     }
   }
 
@@ -148,8 +160,7 @@ class SandBox {
     ctx.fillStyle = "#2F3337";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    for (const [xy, grain] of this.sand.entries()) {
-      const [x, y] = xy.split(",").map(Number);
+    for (const [[x, y], grain] of this.enumerateSand()) {
       if (grain) {
         grain.draw(x, y);
       }
@@ -161,7 +172,7 @@ class SandBox {
 
 class SandParticle {
   constructor(color) {
-    this.color = `hsl(${color}, 80%, 40%)`;
+    this.color = `hsl(${color}, 70%, 50%)`;
     this.speed = GRAIN_SIZE * 1;
   }
 
