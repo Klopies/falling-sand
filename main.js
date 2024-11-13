@@ -1,4 +1,4 @@
-const NUM_PARTICLES = 2 ** 13.5;
+const NUM_PARTICLES = 2 ** 14;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -28,8 +28,10 @@ class SandBox {
     this.sand = new Map();
     this.color = 180;
     this.erasing = false;
+    this.trippy = false;
     this.eraseButton = document.getElementById("erase");
     this.resetButton = document.getElementById("reset");
+    this.trippyButton = document.getElementById("trippy");
     this.gridArray = createReverseGridArray(GRID_HEIGHT, GRID_WIDTH);
     this.update = this.update.bind(this);
     this.render = this.render.bind(this);
@@ -88,9 +90,9 @@ class SandBox {
     return true;
   }
 
-  drawBlockOfSand(x, y) {
-    for (let i = -2; i < 2; i++) {
-      for (let j = -2; j < 2; j++) {
+  drawBlockOfSand(x, y, size = 4) {
+    for (let i = -size; i < size; i++) {
+      for (let j = -size; j < size; j++) {
         if (this.hasSand(x + i, y + j)) {
           continue;
         }
@@ -99,9 +101,9 @@ class SandBox {
     }
   }
 
-  eraseBlockOfSand(x, y) {
-    for (let i = -2; i < 2; i++) {
-      for (let j = -2; j < 2; j++) {
+  eraseBlockOfSand(x, y, size = 4) {
+    for (let i = -size; i < size; i++) {
+      for (let j = -size; j < size; j++) {
         if (this.hasSand(x + i, y + j)) {
           this.emptyCell(x + i, y + j);
         }
@@ -117,8 +119,15 @@ class SandBox {
 
     document.getElementById("action").innerHTML = active ? "erase" : "draw";
     document.getElementById("info").innerHTML = active
-      ? "(press ESC to cancel)"
+      ? "erasing... (press ESC to cancel)"
       : "";
+  }
+
+  onTrippyStateChange(active) {
+    this.trippy = active;
+    active
+      ? this.trippyButton.classList.add("active")
+      : this.trippyButton.classList.remove("active");
   }
 
   init() {
@@ -135,6 +144,10 @@ class SandBox {
       this.onEraseStateChange(!this.erasing);
     });
 
+    this.trippyButton.addEventListener("click", () => {
+      this.onTrippyStateChange(!this.trippy);
+    });
+
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         this.onEraseStateChange(false);
@@ -143,9 +156,10 @@ class SandBox {
 
     canvas.addEventListener("mousedown", (e) => {
       drawing = true;
+      console.log(e.layerX);
       const [x, y] = [
-        Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
-        Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE),
+        Math.floor(e.layerX / GRAIN_SIZE),
+        Math.floor(e.layerY / GRAIN_SIZE),
       ];
       if (drawing) {
         this.erasing ? this.eraseBlockOfSand(x, y) : this.drawBlockOfSand(x, y);
@@ -158,8 +172,8 @@ class SandBox {
 
     canvas.addEventListener("mousemove", (e) => {
       const [x, y] = [
-        Math.floor((e.clientX - e.target.offsetLeft) / GRAIN_SIZE),
-        Math.floor((e.clientY - e.target.offsetTop) / GRAIN_SIZE),
+        Math.floor(e.layerX / GRAIN_SIZE),
+        Math.floor(e.layerY / GRAIN_SIZE),
       ];
       if (drawing) {
         this.erasing ? this.eraseBlockOfSand(x, y) : this.drawBlockOfSand(x, y);
@@ -172,11 +186,16 @@ class SandBox {
   }
 
   update() {
-    this.color = (this.color + 0.1) % 360;
+    this.color = (this.color + 0.3) % 360;
 
     document
       .getElementById("sand")
       .setAttribute("style", `--sand-color: hsl(${this.color} 70% 50%)`);
+
+    this.trippyButton.setAttribute(
+      "style",
+      `--trippy-color: hsl(${this.color} 70% 50%)`
+    );
 
     for (let i = 0; i < this.gridArray.length; i++) {
       const [x, y] = this.gridArray[i];
@@ -207,7 +226,7 @@ class SandBox {
 
     for (const [[x, y], grain] of this.enumerateSand()) {
       if (grain) {
-        grain.draw(x, y);
+        grain.draw(x, y, this.trippy, this.color);
       }
     }
 
@@ -217,12 +236,17 @@ class SandBox {
 
 class SandParticle {
   constructor(color) {
-    this.color = `hsl(${color}, 70%, 50%)`;
+    this.color = color;
     this.speed = GRAIN_SIZE * 1;
   }
 
-  draw(x, y) {
-    ctx.fillStyle = this.color;
+  getColor(trippyMode = false, currentColor = this.color) {
+    const value = trippyMode ? (this.color + currentColor) % 360 : this.color;
+    return `hsl(${value}, 70%, 50%)`;
+  }
+
+  draw(x, y, trippyMode = false, currentColor = this.color) {
+    ctx.fillStyle = this.getColor(trippyMode, currentColor);
     ctx.fillRect(x * GRAIN_SIZE, y * GRAIN_SIZE, GRAIN_SIZE, GRAIN_SIZE);
   }
 }
